@@ -17,7 +17,7 @@ The academic background for this project is **Transfer Learning**. More specific
 
 ### Problem Statement
 
-The project is chosen from a Kaggle competition: [Transfer Learning on Stack Exchange Tags](https://www.kaggle.com/c/transfer-learning-on-stack-exchange-tags). The goal is to predict tags that should be added to a question from a certain topic (physics) on [stackexchange](http://stackexchange.com/). The prediction relies on training with a corpus of seemingly unrelated topics (biology, cooking, cryptography, diy, robotics, and travel). Particularly, given an untagged physics question with features $X$ on stackexchange, we would like to predict the corresponding tags $y=\{y_1, ..., y_m\}$$. In testing phase, the model can be evaluated using metrics such as precision, recall and F1-Score. 
+The project is chosen from a Kaggle competition: [Transfer Learning on Stack Exchange Tags](https://www.kaggle.com/c/transfer-learning-on-stack-exchange-tags). The goal is to predict tags that should be added to a question from a certain topic (physics) on [stackexchange](http://stackexchange.com/). The prediction relies on training with a corpus of seemingly unrelated topics (biology, cooking, cryptography, diy, robotics, and travel). Particularly, given an untagged physics question with features $X$ on stackexchange, we would like to predict the corresponding tags ![ys](md_formula/ys.png). In testing phase, the model can be evaluated using metrics such as precision, recall and F1-Score. 
 
 ### Datasets and Inputs
 
@@ -38,15 +38,15 @@ In this section, provide the details for a benchmark model or result that relate
 
 The evaluation metric adopted in this project follows the requirements in the Kaggle competition. It uses Mean F1-score which weight precision and recall equally:
 
-$$F_1 = \frac{2p\cdot r}{p+r}$$
+![F1](md_formula/mean_f1_score.png)
 
 where
 
-$$p = \frac{\text{# of true positives}}{\text{# of true positives} + \text{# of false positivese}}$$
+![Precision](md_formula/precision.png)
 
 and 
 
-$$r = \frac{\text{# of true positives}}{\text{# of true positives} + \text{# of false negatives}}$$
+![Recall](md_formula/recall.png)
 
 ### Project Design
 _(approx. 1 page)_
