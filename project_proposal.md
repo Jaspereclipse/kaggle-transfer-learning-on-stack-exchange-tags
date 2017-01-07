@@ -17,14 +17,13 @@ The academic background for this project is **Transfer Learning**. More specific
 
 ### Problem Statement
 
-In this section, clearly describe the problem that is to be solved. The problem described should be well defined and should have at least one relevant potential solution. Additionally, describe the problem thoroughly such that it is clear that the problem is quantifiable (the problem can be expressed in mathematical or logical terms) , measurable (the problem can be measured by some metric and clearly observed), and replicable (the problem can be reproduced and occurs more than once).
-d
-The project is chosen from a Kaggle competition: [Transfer Learning on Stack Exchange Tags](https://www.kaggle.com/c/transfer-learning-on-stack-exchange-tags). The goal is to predict tags that should be added to a question from a certain topic (physics) on [stackexchange](http://stackexchange.com/). The prediction relies on training with a corpus of seemingly unrelated topics (biology, cooking, cryptography, diy, robotics, and travel). Particularly, given a physics question with features $X$ on stackexchange, we would like to predict the corresponding tags $y=\{y_1, ..., y_m\}$$
+The project is chosen from a Kaggle competition: [Transfer Learning on Stack Exchange Tags](https://www.kaggle.com/c/transfer-learning-on-stack-exchange-tags). The goal is to predict tags that should be added to a question from a certain topic (physics) on [stackexchange](http://stackexchange.com/). The prediction relies on training with a corpus of seemingly unrelated topics (biology, cooking, cryptography, diy, robotics, and travel). Particularly, given an untagged physics question with features $X$ on stackexchange, we would like to predict the corresponding tags $y=\{y_1, ..., y_m\}$$. In testing phase, the model can be evaluated using metrics such as precision, recall and F1-Score. 
 
 ### Datasets and Inputs
-_(approx. 2-3 paragraphs)_
 
-In this section, the dataset(s) and/or input(s) being considered for the project should be thoroughly described, such as how they relate to the problem and why they should be used. Information such as how the dataset or input is (was) obtained, and the characteristics of the dataset or input, should be included with relevant references and citations as necessary It should be clear how the dataset(s) or input(s) will be used in the project and whether their use is appropriate given the context of the problem.ddddd
+In this section, the dataset(s) and/or input(s) being considered for the project should be thoroughly described, such as how they relate to the problem and why they should be used. Information such as how the dataset or input is (was) obtained, and the characteristics of the dataset or input, should be included with relevant references and citations as necessary It should be clear how the dataset(s) or input(s) will be used in the project and whether their use is appropriate given the context of the problem.
+
+The Kaggle competition adopts a dataset originating from [Stack Exchange data dump](https://archive.org/details/stackexchange). The training dataset includes stackexchange questions from following domains: biology, cooking, cryptography, diy, robotics, and travel. Each record consists of title, content and tags for the question. The testing dataset includes stackexchange questions from physics domain with same structure as the training set only without tags. The dataset will be used for preliminary analysis and as the inputs of the retrieval model. The usage is appropriate since the problem is built upon the given dataset.
 
 ### Solution Statement
 _(approx. 1 paragraph)_
