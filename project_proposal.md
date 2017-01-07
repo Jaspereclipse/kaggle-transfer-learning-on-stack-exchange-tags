@@ -26,7 +26,6 @@ In this section, the dataset(s) and/or input(s) being considered for the project
 The Kaggle competition adopts a dataset originating from [Stack Exchange data dump](https://archive.org/details/stackexchange). The training dataset includes stackexchange questions from following domains: biology, cooking, cryptography, diy, robotics, and travel. Each record consists of title, content and tags for the question. The testing dataset includes stackexchange questions from physics domain with same structure as the training set only without tags. The dataset will be used for preliminary analysis and as the inputs of the retrieval model. The usage is appropriate since the problem is built upon the given dataset.
 
 ### Solution Statement
-_(approx. 1 paragraph)_
 
 In this section, clearly describe a solution to the problem. The solution should be applicable to the project domain and appropriate for the dataset(s) or input(s) given. Additionally, describe the solution thoroughly such that it is clear that the solution is quantifiable (the solution can be expressed in mathematical or logical terms) , measurable (the solution can be measured by some metric and clearly observed), and replicable (the solution can be reproduced and occurs more than once).
 
@@ -36,9 +35,18 @@ _(approximately 1-2 paragraphs)_
 In this section, provide the details for a benchmark model or result that relates to the domain, problem statement, and intended solution. Ideally, the benchmark model or result contextualizes existing methods or known information in the domain and problem given, which could then be objectively compared to the solution. Describe how the benchmark model or result is measurable (can be measured by some metric and clearly observed) with thorough detail.
 
 ### Evaluation Metrics
-_(approx. 1-2 paragraphs)_
 
-In this section, propose at least one evaluation metric that can be used to quantify the performance of both the benchmark model and the solution model. The evaluation metric(s) you propose should be appropriate given the context of the data, the problem statement, and the intended solution. Describe how the evaluation metric(s) are derived and provide an example of their mathematical representations (if applicable). Complex evaluation metrics should be clearly defined and quantifiable (can be expressed in mathematical or logical terms).
+The evaluation metric adopted in this project follows the requirements in the Kaggle competition. It uses Mean F1-score which weight precision and recall equally:
+
+$$F_1 = \frac{2p\cdot r}{p+r}$$
+
+where
+
+$$p = \frac{\text{# of true positives}}{\text{# of true positives} + \text{# of false positivese}}$$
+
+and 
+
+$$r = \frac{\text{# of true positives}}{\text{# of true positives} + \text{# of false negatives}}$$
 
 ### Project Design
 _(approx. 1 page)_
