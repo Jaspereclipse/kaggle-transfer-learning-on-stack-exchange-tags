@@ -10,20 +10,21 @@ Janurary 2nd, 2017
 The academic background for this project is **Transfer Learning**. More specifically, according to [1], it is often referred to as **Transductive Transfer Learning**. By definition, it is a machine learning problem where labeled data are only available in the source domain and the task is to predict labels in a target domain. One common setting in the field is assuming the feature spaces across domains (source/target) are the similar (e.g. words that composite the question) but are subject to different marginal distributions. A well-accepted approach to the problem is to re-weight the labeled data in the source domain during training in order to increase the ability of the model to generalize to target domaim. Related topics includes sample selection bias[2] and co-variate shift[3].
 
 [1] Pan, Sinno Jialin, and Qiang Yang. "A survey on transfer learning." IEEE Transactions on knowledge and data engineering 22.10 (2010): 1345-1359.
+
 [2] Zadrozny, Bianca. "Learning and evaluating classifiers under sample selection bias." Proceedings of the twenty-first international conference on Machine learning. ACM, 2004.
+
 [3] Shimodaira, Hidetoshi. "Improving predictive inference under covariate shift by weighting the log-likelihood function." Journal of statistical planning and inference 90.2 (2000): 227-244.
 
 ### Problem Statement
-_(approx. 1 paragraph)_
 
 In this section, clearly describe the problem that is to be solved. The problem described should be well defined and should have at least one relevant potential solution. Additionally, describe the problem thoroughly such that it is clear that the problem is quantifiable (the problem can be expressed in mathematical or logical terms) , measurable (the problem can be measured by some metric and clearly observed), and replicable (the problem can be reproduced and occurs more than once).
-
-The project is chosen from a Kaggle competition: [Transfer Learning on Stack Exchange Tags](https://www.kaggle.com/c/transfer-learning-on-stack-exchange-tags). The goal is to predict tags that should be added to a question from a certain topic (physics) on [stackexchange](http://stackexchange.com/). The prediction relies on training with a corpus of unrelated topics (biology, cooking, cryptography, diy, robotics, and travel). 
+d
+The project is chosen from a Kaggle competition: [Transfer Learning on Stack Exchange Tags](https://www.kaggle.com/c/transfer-learning-on-stack-exchange-tags). The goal is to predict tags that should be added to a question from a certain topic (physics) on [stackexchange](http://stackexchange.com/). The prediction relies on training with a corpus of seemingly unrelated topics (biology, cooking, cryptography, diy, robotics, and travel). Particularly, given a physics question with features $X$ on stackexchange, we would like to predict the corresponding tags $y=\{y_1, ..., y_m\}$$
 
 ### Datasets and Inputs
 _(approx. 2-3 paragraphs)_
 
-In this section, the dataset(s) and/or input(s) being considered for the project should be thoroughly described, such as how they relate to the problem and why they should be used. Information such as how the dataset or input is (was) obtained, and the characteristics of the dataset or input, should be included with relevant references and citations as necessary It should be clear how the dataset(s) or input(s) will be used in the project and whether their use is appropriate given the context of the problem.
+In this section, the dataset(s) and/or input(s) being considered for the project should be thoroughly described, such as how they relate to the problem and why they should be used. Information such as how the dataset or input is (was) obtained, and the characteristics of the dataset or input, should be included with relevant references and citations as necessary It should be clear how the dataset(s) or input(s) will be used in the project and whether their use is appropriate given the context of the problem.ddddd
 
 ### Solution Statement
 _(approx. 1 paragraph)_
