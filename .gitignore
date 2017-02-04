@@ -90,3 +90,9 @@ ENV/
 
 # Others
 .DS_Store
+
+# PyCharm
+.idea
+
+# tmp data
+data/tmp
