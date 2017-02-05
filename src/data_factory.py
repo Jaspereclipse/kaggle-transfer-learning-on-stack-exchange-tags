@@ -87,16 +87,18 @@ def build_word_dict(data, save_path, capped=None):
         word2freq[word] = freq
         sum_ += freq
     word2freq['_UNK_'] = len(words) - sum_
+    word2id['_NULL_'] = len(word2id)
+    word2freq['_NULL_'] = -1
     print "Generated word dictionary; number of words: %d"%len(word2id)
     assert osp.isdir(save_path), "Invalid save path!"
-    word2id_file = osp.join(save_path, "word2id_%d.pkl"%capped)
-    word2freq_file = osp.join(save_path, "word2freq_%d.pkl"%capped)
+    word2id_file = osp.join(save_path, "word2id.pkl")
+    word2freq_file = osp.join(save_path, "word2freq.pkl")
     with open(word2id_file, 'wb') as f:
         pkl.dump(word2id, f)
     with open(word2freq_file, 'wb') as f:
         pkl.dump(word2freq, f)
-    print "Dumped to: %s"%word2id_file
-    print "Dumped to: %s"%word2freq_file
+    print "Dumped to: %s (counts: %d)"%(word2id_file, capped)
+    print "Dumped to: %s (counts: %d)"%(word2freq_file, capped)
     return word2id, word2freq
 
 def load_pickle(pkl_file):
@@ -132,10 +134,10 @@ def build_dataset(data, vocab, save_path, filter_dict={'min': 3, 'max': 50}):
     df_sent["length"] = df_sent["encoding"].apply(len)
     df_sent = df_sent.loc[df_sent["length"] > filter_dict['min'], :]
     df_sent = df_sent.loc[df_sent["length"] < filter_dict['max'], :]
-    sents_file = osp.join(save_path, "sentences_%d.pkl"%len(df_sent.index))
+    sents_file = osp.join(save_path, "sentences.pkl") #number of paragraphs
     with open(sents_file, "wb") as f:
         pkl.dump(df_sent, f)
-    print "Dumped to: %s"%sents_file
+    print "Dumped to: %s; (paragraphs: %d)"%(sents_file, len(set(df_sent['qid'])))
     return df_sent
 
 def get_batch(data, batch_size, window, null_id):
@@ -180,8 +182,9 @@ if __name__ == '__main__':
     save_path = "../data/tmp/"
 
     # word2id, word2freq = build_word_dict(df, save_path)
-    word2id = load_pickle(osp.join(save_path, "word2id_387915.pkl"))
+    word2id = load_pickle(osp.join(save_path, "word2id.pkl"))
+    id2word = {v: k for k, v in word2id.iteritems()}
     df_sent = build_dataset(df, word2id, save_path)
 
     # batch
-    get_batch(df_sent, 128, 5, len(word2id))
+    get_batch(df_sent, 128, 5, id2word['_NULL_'])
