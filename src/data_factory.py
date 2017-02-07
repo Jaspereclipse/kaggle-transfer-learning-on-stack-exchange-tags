@@ -8,8 +8,6 @@ from bs4 import BeautifulSoup as bs
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk import FreqDist
 import cPickle as pkl
-from collections import deque
-import sys
 
 def combine(train_dict, test_dict):
     """Combine a list of csv files into data frame
@@ -101,14 +99,6 @@ def build_word_dict(data, save_path, capped=None):
     print "Dumped to: %s (counts: %d)"%(word2freq_file, capped)
     return word2id, word2freq
 
-def load_pickle(pkl_file):
-    assert osp.exists(pkl_file), "file does not exist: %s" % pkl_file
-    with open(pkl_file, "rb") as f:
-        target = pkl.load(f)
-    print "Loaded %s" % pkl_file
-    return target
-
-
 def build_dataset(data, vocab, save_path, filter_dict={'min': 3, 'max': 50}):
     """build dataset for doc2vec training
     :param data: preprocessed data
@@ -134,57 +124,90 @@ def build_dataset(data, vocab, save_path, filter_dict={'min': 3, 'max': 50}):
     df_sent["length"] = df_sent["encoding"].apply(len)
     df_sent = df_sent.loc[df_sent["length"] > filter_dict['min'], :]
     df_sent = df_sent.loc[df_sent["length"] < filter_dict['max'], :]
-    sents_file = osp.join(save_path, "sentences.pkl") #number of paragraphs
-    with open(sents_file, "wb") as f:
-        pkl.dump(df_sent, f)
-    print "Dumped to: %s; (paragraphs: %d)"%(sents_file, len(set(df_sent['qid'])))
+    df_sent['id'] = df_sent.groupby("qid").grouper.group_info[0] # numeric id for each paragraph
+    df_sent = df_sent[['id', 'qid', 'encoding']]
+    sents_file = osp.join(save_path, "sentences.csv") #number of paragraphs
+    df_sent.to_csv(sents_file, index=False, encoding='utf-8')
+    print "Saved to: %s; (paragraphs: %d)"%(sents_file, len(set(df_sent['qid'])))
     return df_sent
 
-def get_batch(data, batch_size, window, null_id):
-    """generate batch for stochastic gradient descent
-    :param data: training data frame
-    :param batch_size: num of windows each batch
-    :param window: window width
-    :param null_id: padding id; always set to len(vocab)
-    :return: batch tokens and labels
-    """
-    batch = np.ndarray(shape=(batch_size, window), dtype=np.int32)
-    labels = np.ndarray(shape=(batch_size, 1), dtype=np.int32)
-    sample = data.sample(n=batch_size//10).reset_index()
-    assert sample['length'].sum() >= batch_size, "Not enought data: %d (< %d)" %(sample["length"].sum(), batch_size)
-    cnt = 0 # fill count
-    row = 0
-    while cnt < batch_size:
-        buffer_ = [null_id]*window + sample.loc[row, 'encoding'] # add paddings
-        for i in xrange(len(buffer_) - window): # slide window across sentence
-            if cnt < batch_size:
-                batch[cnt, :] = buffer_[i: i + window]
-                labels[cnt, 0] = buffer_[i + window]
-                cnt += 1
-            else:
-                break
-        row += 1 # proceed to next sentence
-    return batch, labels
+class Feed(object):
+    """data feed for doc2vec graph model"""
+    def __init__(self, training_data_csv, vocab_pkl, vocab_count_pkl):
+        self.training_data = pd.read_csv(training_data_csv)
+        self.vocab = self.load_pickle(vocab_pkl)
+        self.reverse_vocab = {v:k for k, v in self.vocab.iteritems()}
+        self.vocab_counts = self.load_pickle(vocab_count_pkl)
+        self.null_id =  self.vocab['_NULL_']
+        self._epoch = 1
+        self.nrow = len(self.training_data.index)
+        self.cnt_row = 0
+        toIntList = lambda s: map(int, re.sub("[\[\]]", "", s).split(','))
+        self.training_data['encoding'] = self.training_data['encoding'].apply(toIntList)
+        print "Initialized feed."
 
+    def load_pickle(self, pkl_file):
+        assert osp.exists(pkl_file), "file does not exist: %s" % pkl_file
+        with open(pkl_file, "rb") as f:
+            target = pkl.load(f)
+        print "Loaded %s" % pkl_file
+        return target
+
+    def get_vocab_size(self):
+        return len(self.vocab)
+
+    def get_num_paragraphs(self):
+        return len(set(self.training_data['id']))
+
+    def get_batch(self, batch_size, window):
+        """generate batch for stochastic gradient descent
+        :param data: training data frame
+        :param batch_size: num of windows each batch
+        :param window: window width
+        :param null_id: padding id; always set to len(vocab)
+        :return: batch token ids, paragraph ids and labels
+        """
+        batch = {}
+        batch['word'] = np.ndarray(shape=(batch_size, window), dtype=np.int32)
+        batch['paragraph'] = np.ndarray(shape=(batch_size, 1), dtype=np.int32)
+        labels = np.ndarray(shape=(batch_size, 1), dtype=np.int32)
+        sample = self.training_data.sample(n=batch_size//10).reset_index()
+        sum_ = sample['encoding'].apply(len).sum()
+        assert sum_ >= batch_size, "Not enough data: %d (< %d)" %(sum_, batch_size)
+
+        cnt = 0 # fill count
+        row = 0
+
+        while cnt < batch_size:
+            buffer_ = [self.null_id] * window + sample.loc[row, 'encoding'] # add paddings
+            pid = sample.loc[row, 'id']
+            for i in xrange(len(buffer_) - window): # slide window across sentence
+                if cnt < batch_size:
+                    batch['word'][cnt, :] = buffer_[i: i + window]
+                    batch['paragraph'][cnt, 0] = pid
+                    labels[cnt, 0] = buffer_[i + window]
+                    cnt += 1
+                else:
+                    break
+            row += 1 # proceed to next sentence
+        self.cnt_row += row
+        if self.cnt_row >= self.nrow:
+            self._epoch += 1
+            self.cnt_row = 0
+        return batch, labels, self._epoch
 
 if __name__ == '__main__':
 
-    # set up
-    train_data_dir = '../data/train/'
-    train_topics = ['biology', 'cooking', 'crypto', 'diy', 'robotics', 'travel']
-    train_files = [osp.join(train_data_dir, t+'.csv') for t in train_topics]
-    train_dict = dict(zip(train_topics, train_files))
-    test_dict = {'physics': '../data/test/test.csv'}
-
-    # load-transform-save
-    df = combine(train_dict, test_dict)
-    df = preprocess(df)
+    # # set up
+    # train_data_dir = '../data/train/'
+    # train_topics = ['biology', 'cooking', 'crypto', 'diy', 'robotics', 'travel']
+    # train_files = [osp.join(train_data_dir, t+'.csv') for t in train_topics]
+    # train_dict = dict(zip(train_topics, train_files))
+    # test_dict = {'physics': '../data/test/test.csv'}
+    #
+    # # load-transform-save
+    # df = combine(train_dict, test_dict)
+    # df = preprocess(df)
     save_path = "../data/tmp/"
-
-    # word2id, word2freq = build_word_dict(df, save_path)
-    word2id = load_pickle(osp.join(save_path, "word2id.pkl"))
-    id2word = {v: k for k, v in word2id.iteritems()}
-    df_sent = build_dataset(df, word2id, save_path)
-
-    # batch
-    get_batch(df_sent, 128, 5, id2word['_NULL_'])
+    feed = Feed(osp.join(save_path, "sentences.csv"), osp.join(save_path, "word2id.pkl"), osp.join(save_path, "word2freq.pkl"))
+    batch, labels = feed.get_batch(128, 5)
