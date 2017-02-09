@@ -135,10 +135,12 @@ class Feed(object):
     """data feed for doc2vec graph model"""
     def __init__(self, training_data_csv, vocab_pkl, vocab_count_pkl):
         self.training_data = pd.read_csv(training_data_csv)
-        self.vocab = self.load_pickle(vocab_pkl)
-        self.reverse_vocab = {v:k for k, v in self.vocab.iteritems()}
-        self.vocab_counts = self.load_pickle(vocab_count_pkl)
-        self.null_id =  self.vocab['_NULL_']
+        vocab = self.load_pickle(vocab_pkl) # words2id
+        self.null_id = vocab['_NULL_']
+        self.id2word = {v:k for k, v in vocab.iteritems()} # id2word
+        word2freq = self.load_pickle(vocab_count_pkl) # word2freq
+        id2freq = {k: word2freq[v] for k, v in self.id2word.iteritems()} # id2freq
+        self.vocab_counts = [id2freq[k] for k in sorted(id2freq.keys())]
         self._epoch = 1
         self.nrow = len(self.training_data.index)
         self.cnt_row = 0
@@ -153,8 +155,11 @@ class Feed(object):
         print "Loaded %s" % pkl_file
         return target
 
+    def get_vocal_counts(self):
+        return self.vocab_counts
+
     def get_vocab_size(self):
-        return len(self.vocab)
+        return len(self.id2word)
 
     def get_num_paragraphs(self):
         return len(set(self.training_data['id']))
@@ -162,16 +167,15 @@ class Feed(object):
     def get_batch(self, batch_size, window):
         """generate batch for stochastic gradient descent
         :param data: training data frame
-        :param batch_size: num of windows each batch
-        :param window: window width
+        :param batch_size: num of windows each batch; type: ndarray with shape=(1,)
+        :param window: window width; type: ndarray with shape=(1,)
         :param null_id: padding id; always set to len(vocab)
         :return: batch token ids, paragraph ids and labels
         """
-        batch = {}
-        batch['word'] = np.ndarray(shape=(batch_size, window), dtype=np.int32)
-        batch['paragraph'] = np.ndarray(shape=(batch_size, 1), dtype=np.int32)
+        batch_words = np.ndarray(shape=(batch_size, window), dtype=np.int32)
+        batch_paragraphs = np.ndarray(shape=(batch_size, 1), dtype=np.int32)
         labels = np.ndarray(shape=(batch_size, 1), dtype=np.int32)
-        sample = self.training_data.sample(n=batch_size//10).reset_index()
+        sample = self.training_data.sample(n=batch_size//5).reset_index()
         sum_ = sample['encoding'].apply(len).sum()
         assert sum_ >= batch_size, "Not enough data: %d (< %d)" %(sum_, batch_size)
 
@@ -183,8 +187,8 @@ class Feed(object):
             pid = sample.loc[row, 'id']
             for i in xrange(len(buffer_) - window): # slide window across sentence
                 if cnt < batch_size:
-                    batch['word'][cnt, :] = buffer_[i: i + window]
-                    batch['paragraph'][cnt, 0] = pid
+                    batch_words[cnt, :] = buffer_[i: i + window]
+                    batch_paragraphs[cnt, 0] = pid
                     labels[cnt, 0] = buffer_[i + window]
                     cnt += 1
                 else:
@@ -194,7 +198,7 @@ class Feed(object):
         if self.cnt_row >= self.nrow:
             self._epoch += 1
             self.cnt_row = 0
-        return batch, labels, self._epoch
+        return batch_words, batch_paragraphs, labels, np.int32(self._epoch)
 
 if __name__ == '__main__':
 
@@ -210,4 +214,3 @@ if __name__ == '__main__':
     # df = preprocess(df)
     save_path = "../data/tmp/"
     feed = Feed(osp.join(save_path, "sentences.csv"), osp.join(save_path, "word2id.pkl"), osp.join(save_path, "word2freq.pkl"))
-    batch, labels = feed.get_batch(128, 5)

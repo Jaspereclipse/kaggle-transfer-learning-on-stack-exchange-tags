@@ -18,4 +18,5 @@ def ConfigSectionMap(section="data"):
 
 Parser = ConfigParser.ConfigParser()
 Parser.read("../common.config")
-config = ConfigSectionMap("data")
+config_data = ConfigSectionMap("data")
+config_log = ConfigSectionMap("log")

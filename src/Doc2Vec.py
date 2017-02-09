@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
@@ -26,11 +25,13 @@ class Doc2Vec(object):
         self._feed = Feed(options.train_data, options.vocabulary, options.vocabulary_counts)
         self._options.vocab_size = self._feed.get_vocab_size()
         self._options.num_paragraphs = self._feed.get_num_paragraphs()
+        self.build_graph()
 
-    def forward(self, batch_data, batch_labels):
+    def forward(self, batch_words, batch_paragraphs, batch_labels):
         """forward passing of doc2vec net
-        :param batch_data: "paragraph": [batch_size, 1]; "word": [batch_size, window]
-        :param batch_labels: [batch_size, 1]
+        :param batch_words: words in the batch, e.g. [batch_size, window]
+        :param batch_paragraphs: paragraphs in the batch, e.g. [batch_size, 1]
+        :param batch_labels: labels in the batch, e.g. [batch_size, 1]
         :return: true label and contrast sample logits
         """
 
@@ -39,19 +40,19 @@ class Doc2Vec(object):
         # Word and paragraph embeddings
         wd_embed_init_width = 0.5 / opts.wd_emb_dim
         ph_embed_init_width = 0.5 / opts.ph_emb_dim
-        wd_embed = tf.Variable(tf.random_uniform([opts.vocab_size, opts.wd_embed_dim], -wd_embed_init_width,
+        wd_embed = tf.Variable(tf.random_uniform([opts.vocab_size, opts.wd_emb_dim], -wd_embed_init_width,
                                                  wd_embed_init_width), name="word_embedding")
-        ph_embed = tf.Variable(tf.random_uniform([opts.num_paragraphs, opts.ph_embed_din], -ph_embed_init_width,
+        ph_embed = tf.Variable(tf.random_uniform([opts.num_paragraphs, opts.ph_emb_dim], -ph_embed_init_width,
                                                  ph_embed_init_width), name="paragraph_embedding")
         self._wd_embed = wd_embed
         self._ph_embed = ph_embed
 
         # Softmax weight & biases
-        sm_wgt = tf.Variable(tf.zeros([opts.vocab_size, opts.input_embed_dim]), name="Softmax weights")
-        sm_b = tf.Variable(tf.zeros([opts.vocab_size]), name="Softmax biases")
+        sm_wgt = tf.Variable(tf.zeros([opts.vocab_size, opts.input_emb_dim]), name="Softmax_weights")
+        sm_b = tf.Variable(tf.zeros([opts.vocab_size]), name="Softmax_biases")
 
         # Global step
-        self.global_step = tf.Variable(0, "global step")
+        self.global_step = tf.Variable(0, "global_step")
 
         # Prepare for computing NCE loss
         labels_matrix = tf.reshape(tf.cast(batch_labels, dtype=tf.int64), [opts.batch_size, 1])
@@ -64,29 +65,28 @@ class Doc2Vec(object):
             unique=True,
             range_max=opts.vocab_size,
             distortion=.75,
-            unigrams=opts.vocab_counts.tolist()
+            unigrams=self._feed.get_vocal_counts()
         ))
 
-        # Paragraph embeddings for the batch: [batch_size, ph_embed_dim]
-        batch_ph_embed = tf.nn.embedding_lookup(ph_embed, batch_data["paragraph"])
-
-        # Word embeddings for the batch: [batch_size, window, wd_embed_dim]
-        batch_wd_embed = tf.nn.embedding_lookup(wd_embed, batch_data["word"])
-
-        # Input embeddings for the batch: [batch_size, input_embed_dim]
+        # Paragraph embeddings for the batch: [batch_size, ph_emb_dim]
+        batch_ph_embed = tf.nn.embedding_lookup(ph_embed, batch_paragraphs)
+        # Word embeddings for the batch: [batch_size, window, wd_emb_dim]
+        batch_wd_embed = tf.nn.embedding_lookup(wd_embed, batch_words)
+        # Input embeddings for the batch: [batch_size, input_emb_dim]
         if opts.mode == "sum":
             batch_input_embed = tf.add(tf.reduce_sum(batch_wd_embed, 1), batch_ph_embed)
         elif opts.mode == "average":
             batch_input_embed = tf.add(tf.reduce_mean(batch_wd_embed, 1), batch_ph_embed)
         else:
-            batch_input_embed = tf.concat(1, [batch_ph_embed, tf.reshape(batch_wd_embed, [opts.batch_size, opts.window * opts.wd_emb_dim])])
+            batch_input_embed = tf.concat_v2([tf.reshape(batch_ph_embed, [opts.batch_size, opts.ph_emb_dim]),
+                                              tf.reshape(batch_wd_embed, [opts.batch_size, opts.window * opts.wd_emb_dim])], 1)
 
-        # Weights for labels: [batch_size, input_embed_dim]
+        # Weights for labels: [batch_size, input_emb_dim]
         true_wgt = tf.nn.embedding_lookup(sm_wgt, batch_labels)
         # Biases for labels: [batch_size, 1]
         true_b = tf.nn.embedding_lookup(sm_b, batch_labels)
 
-        # Weights for samples: [num_samples, input_embed_dim]
+        # Weights for samples: [num_samples, input_emb_dim]
         sampled_wgt = tf.nn.embedding_lookup(sm_wgt, sampled_ids)
         sampled_b = tf.nn.embedding_lookup(sm_b, sampled_ids)
 
@@ -107,11 +107,10 @@ class Doc2Vec(object):
         """
         opts = self._options
         true_xent = tf.nn.sigmoid_cross_entropy_with_logits(
-            labels=tf.ones_like(true_logits), logits=true_logits)
+            targets=tf.ones_like(true_logits), logits=true_logits)
         sampled_xent = tf.nn.sigmoid_cross_entropy_with_logits(
-            labels=tf.zeros_like(sampled_logits), logits=sampled_logits)
-
-        loss = (tf.reduce_sum(true_xent) + tf.reduce_sum(sampled_logits)) / opts.batch_size
+            targets=tf.zeros_like(sampled_logits), logits=sampled_logits)
+        loss = (tf.reduce_sum(true_xent) + tf.reduce_sum(sampled_xent)) / opts.batch_size
         return loss
 
     def optimize(self, loss):
@@ -120,26 +119,31 @@ class Doc2Vec(object):
         :return: None
         """
         opts = self._options
-        self._lr = opts.learning_rate
-        optimizer = tf.train.GradientDescentOptimizer(self._lr)
+        self._lr = tf.constant(opts.learning_rate, dtype=tf.float32, name='learning_rate')
+        optimizer = tf.train.AdadeltaOptimizer(self._lr)
         train = optimizer.minimize(loss, global_step=self.global_step, gate_gradients=optimizer.GATE_NONE)
         self._train = train
 
     def build_graph(self):
         """graph for full doc2vec model"""
         opts = self._options
-        batch, labels, self._epoch = self._feed.get_batch(opts.batch_size, opts.window)
+
+        batch_size = tf.constant(opts.batch_size, dtype=tf.int32)
+        window = tf.constant(opts.window, dtype=tf.int32)
+        batch_words, batch_paragraphs, labels, self._epoch = \
+            tf.py_func(self._feed.get_batch, [batch_size, window], [tf.int32]*4)
+
+        self._batch_words = batch_words
+        self._batch_paragraphs = batch_paragraphs
+        self._labels = labels
 
         print("Training data: %s"%opts.train_data)
         print("Vocabulary size (excluding UNK and NUL): %d"%(opts.vocab_size-2))
         print("Paragraphs per epoch: %d"%opts.num_paragraphs)
 
-        self._batch = batch
-        self._labels = labels
-
-        true_logits, sampled_logits = self.forward(batch, labels)
+        true_logits, sampled_logits = self.forward(batch_words, batch_paragraphs, labels)
         loss = self.nce_loss(true_logits, sampled_logits)
-        tf.scalar_summary("NCE loss", loss)
+        tf.summary.scalar("NCE_loss", loss)
         self._loss = loss
         self.optimize(loss)
 
@@ -193,7 +197,7 @@ class Doc2Vec(object):
 
         return epoch
 
-def main():
+def main(_):
     """train doc2vec"""
     opts = Options()
     with tf.Graph().as_default(), tf.Session() as session:

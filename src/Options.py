@@ -1,4 +1,4 @@
-from _init_ import config
+from _init_ import config_data, config_log
 import tensorflow as tf
 
 # # takes memory
@@ -8,27 +8,27 @@ import tensorflow as tf
 
 flags = tf.app.flags
 # directories
-flags.DEFINE_string("save_path", config['save_path'], "save path")
+flags.DEFINE_string("save_path", config_log['save_path'], "save path")
 # files
-flags.DEFINE_string("train_data", config['training_data'], "Doc2Vec training data")
-flags.DEFINE_string("vocabulary", config['vocabulary'], "Vocabulary")
-flags.DEFINE_string("vocabulary_counts", config['vocabulary_counts'], "Vocabulary counts")
+flags.DEFINE_string("train_data", config_data['training_data'], "Doc2Vec training data")
+flags.DEFINE_string("vocabulary", config_data['vocabulary'], "Vocabulary")
+flags.DEFINE_string("vocabulary_counts", config_data['vocabulary_counts'], "Vocabulary counts")
 # model params
 flags.DEFINE_integer("vocab_size", None, "vocabulary size") # include NULL, UNK
 flags.DEFINE_integer("num_paragraphs", None, "number of paragraphs in the training set")
-flags.DEFINE_integer("doc_embedding_size", 200, "embedding size for paragraph")
-flags.DEFINE_integer("word_embedding_size", 100, "embedding size for word")
+flags.DEFINE_integer("doc_embedding_size", 100, "embedding size for paragraph")
+flags.DEFINE_integer("word_embedding_size", 50, "embedding size for word")
 flags.DEFINE_integer("batch_size", 128, "number of training samples per batch")
 flags.DEFINE_integer("num_neg_samples", 100, "number of negative samples per training sample")
 flags.DEFINE_integer("epochs", 15, "number of epochs to train")
-flags.DEFINE_float("learning_rate", 0.2, "learning rate")
+flags.DEFINE_float("learning_rate", 0.1, "learning rate")
 flags.DEFINE_string("mode", "concat", "ways to combine paragraph with word embeddings, e.g. [concat|sum|average]")
-flags.DEFINE_integer("window", 5, "number of preceding words used to predict next word")
+flags.DEFINE_integer("window", 4, "number of preceding words used to predict next word")
 # train param
 flags.DEFINE_integer("threads", 8, "number of threads used in training")
-flags.DEFINE_integer("stats_interval", 10, "Print statistics every N seconds")
-flags.DEFINE_integer("summary_interval", 10, "Save training summary to file every N seconds")
-flags.DEFINE_integer("checkpoint_interval", 600, "Save model parameters every N seconds")
+flags.DEFINE_integer("stats_interval", 1800, "Print statistics every N seconds")
+flags.DEFINE_integer("summary_interval", 1800, "Save training summary to file every N seconds")
+flags.DEFINE_integer("checkpoint_interval", 7200, "Save model parameters every N seconds")
 FLAGS = flags.FLAGS
 
 class Options(object):
@@ -52,11 +52,12 @@ class Options(object):
         if self.mode in ["sum", "average"]: # sum/average
             assert self.wd_emb_dim == self.ph_emb_dim,\
             "If not concatenated, paragraph embeddings should have the same size as word embedding's"
-            self.input_embed_dim = self.ph_emb_dim
+            self.input_emb_dim = self.ph_emb_dim
         else:
-            self.input_embed_dim = self.window * self.wd_emb_dim + self.ph_emb_dim
+            self.input_emb_dim = self.window * self.wd_emb_dim + self.ph_emb_dim
         self.epochs = FLAGS.epochs
         self.learning_rate = FLAGS.learning_rate
         self.threads = FLAGS.threads
         self.stats_interval = FLAGS.stats_interval
         self.summary_interval = FLAGS.summary_interval
+        self.checkpoint_interval = FLAGS.checkpoint_interval
