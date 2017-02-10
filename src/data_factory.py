@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 import os.path as osp
+from os import mkdir
 import numpy as np
 import re
 from bs4 import BeautifulSoup as bs
@@ -202,15 +203,21 @@ class Feed(object):
 
 if __name__ == '__main__':
 
-    # # set up
-    # train_data_dir = '../data/train/'
-    # train_topics = ['biology', 'cooking', 'crypto', 'diy', 'robotics', 'travel']
-    # train_files = [osp.join(train_data_dir, t+'.csv') for t in train_topics]
-    # train_dict = dict(zip(train_topics, train_files))
-    # test_dict = {'physics': '../data/test/test.csv'}
-    #
-    # # load-transform-save
-    # df = combine(train_dict, test_dict)
-    # df = preprocess(df)
+    # set up
+    train_data_dir = '../data/train/'
+    train_topics = ['biology', 'cooking', 'crypto', 'diy', 'robotics', 'travel']
+    train_files = [osp.join(train_data_dir, t+'.csv') for t in train_topics]
+    train_dict = dict(zip(train_topics, train_files))
+    test_dict = {'physics': '../data/test/test.csv'}
+
+    # load-transform-save
     save_path = "../data/tmp/"
-    feed = Feed(osp.join(save_path, "sentences.csv"), osp.join(save_path, "word2id.pkl"), osp.join(save_path, "word2freq.pkl"))
+    if not osp.exists(save_path):
+        mkdir(save_path)
+    df = combine(train_dict, test_dict)
+    df = preprocess(df)
+
+    word2id,_ = build_word_dict(df, save_path, capped=None)
+    build_dataset(df, word2id, save_path)
+
+    # feed = Feed(osp.join(save_path, "sentences.csv"), osp.join(save_path, "word2id.pkl"), osp.join(save_path, "word2freq.pkl"))

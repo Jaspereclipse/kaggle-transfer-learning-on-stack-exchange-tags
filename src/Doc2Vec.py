@@ -120,7 +120,7 @@ class Doc2Vec(object):
         """
         opts = self._options
         self._lr = tf.constant(opts.learning_rate, dtype=tf.float32, name='learning_rate')
-        optimizer = tf.train.AdadeltaOptimizer(self._lr)
+        optimizer = tf.train.AdagradOptimizer(self._lr)
         train = optimizer.minimize(loss, global_step=self.global_step, gate_gradients=optimizer.GATE_NONE)
         self._train = train
 
@@ -151,39 +151,30 @@ class Doc2Vec(object):
 
         self.saver = tf.train.Saver()
 
-    def _trainer(self): #
-        """threads for training"""
-        init_epoch, = self._session.run([self._epoch])
-        while True:
-            _, epoch = self._session.run([self._train, self._epoch])
-            if epoch != init_epoch:
-                break
+    # def _trainer(self): #
+    #     """threads for training"""
+    #     init_epoch, = self._session.run([self._epoch])
+    #     while True:
+    #         _, epoch = self._session.run([self._train, self._epoch])
+    #         if epoch != init_epoch:
+    #             break
 
     def train(self):
         """train doc2vec model for one epoch"""
         opts = self._options
+        summary_op = tf.summary.merge_all()
+        summary_writer = tf.summary.FileWriter(opts.save_path, self._session.graph)
+        last_summary_time = 0
+        last_checkpoint_time = 0
 
         init_epoch, = self._session.run([self._epoch])
 
-        summary_op = tf.summary.merge_all()
-        summary_writer = tf.summary.FileWriter(opts.save_path, self._session.graph)
-
-        trainers = []
-        for _ in xrange(opts.threads):
-            t = threading.Thread(target=self._trainer)
-            t.start()
-            trainers.append(t)
-
-        last_summary_time = 0
-        last_checkpoint_time = 0
         while True:
-            time.sleep(opts.stats_interval)
-            (epoch, step, loss, lr) = self._session.run(
-                [self._epoch, self.global_step, self._loss, self._lr])
+            _, epoch, step, loss = self._session.run([self._train, self._epoch, self.global_step, self._loss])
             now = time.time()
-            print("Epoch %4d Step %8d: lr = %5.3f loss = %6.2f"%(epoch, step, lr, loss))
-            sys.stdout.flush()
             if now - last_summary_time > opts.summary_interval:
+                print("Epoch %4d Step %8d: loss = %6.2f" % (epoch, step, loss))
+                sys.stdout.flush()
                 summary = self._session.run(summary_op)
                 summary_writer.add_summary(summary, step)
                 last_summary_time = now
@@ -192,16 +183,14 @@ class Doc2Vec(object):
                 last_checkpoint_time = now
             if epoch != init_epoch:
                 break
-        for t in trainers:
-            t.join()
 
         return epoch
 
 def main(_):
     """train doc2vec"""
     opts = Options()
-    with tf.Graph().as_default(), tf.Session() as session:
-        with tf.device("/cpu:0"):
+    with tf.Graph().as_default(), tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as session:
+        with tf.device("/gpu:0"):
             model = Doc2Vec(opts, session)
         for _ in xrange(opts.epochs):
             model.train()

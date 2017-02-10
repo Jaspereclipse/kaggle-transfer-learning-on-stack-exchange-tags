@@ -26,9 +26,9 @@ flags.DEFINE_string("mode", "concat", "ways to combine paragraph with word embed
 flags.DEFINE_integer("window", 4, "number of preceding words used to predict next word")
 # train param
 flags.DEFINE_integer("threads", 8, "number of threads used in training")
-flags.DEFINE_integer("stats_interval", 1800, "Print statistics every N seconds")
-flags.DEFINE_integer("summary_interval", 1800, "Save training summary to file every N seconds")
-flags.DEFINE_integer("checkpoint_interval", 7200, "Save model parameters every N seconds")
+flags.DEFINE_integer("stats_interval", 10, "Print statistics every N seconds")
+flags.DEFINE_integer("summary_interval", 10, "Save training summary to file every N seconds")
+flags.DEFINE_integer("checkpoint_interval", 1800, "Save model parameters every N seconds")
 FLAGS = flags.FLAGS
 
 class Options(object):
