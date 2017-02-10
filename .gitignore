@@ -93,6 +93,7 @@ ENV/
 
 # PyCharm
 .idea
+save/
 
 # tmp data
 data/tmp
