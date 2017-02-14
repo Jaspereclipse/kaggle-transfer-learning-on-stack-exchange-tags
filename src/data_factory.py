@@ -202,15 +202,15 @@ class Feed(object):
 
 if __name__ == '__main__':
 
-    # # set up
-    # train_data_dir = '../data/train/'
-    # train_topics = ['biology', 'cooking', 'crypto', 'diy', 'robotics', 'travel']
-    # train_files = [osp.join(train_data_dir, t+'.csv') for t in train_topics]
-    # train_dict = dict(zip(train_topics, train_files))
-    # test_dict = {'physics': '../data/test/test.csv'}
+    # set up
+    train_data_dir = '../data/train/'
+    train_topics = ['biology', 'cooking', 'crypto', 'diy', 'robotics', 'travel']
+    train_files = [osp.join(train_data_dir, t+'.csv') for t in train_topics]
+    train_dict = dict(zip(train_topics, train_files))
+    test_dict = {'physics': '../data/test/test.csv'}
     #
     # # load-transform-save
-    # df = combine(train_dict, test_dict)
-    # df = preprocess(df)
-    save_path = "../data/tmp/"
-    feed = Feed(osp.join(save_path, "sentences.csv"), osp.join(save_path, "word2id.pkl"), osp.join(save_path, "word2freq.pkl"))
+    df = combine(train_dict, test_dict)
+    df = preprocess(df)
+    # save_path = "../data/tmp/"
+    # feed = Feed(osp.join(save_path, "sentences.csv"), osp.join(save_path, "word2id.pkl"), osp.join(save_path, "word2freq.pkl"))

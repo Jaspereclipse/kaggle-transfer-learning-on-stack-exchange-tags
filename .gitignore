@@ -98,3 +98,9 @@ ENV/
 data/tmp
 save/
 
+# tex
+*.aux
+*.out
+*.synctex.gz
+*.tex
+*.tex.bak
