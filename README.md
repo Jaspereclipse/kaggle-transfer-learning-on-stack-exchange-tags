@@ -28,4 +28,4 @@ The project originates from a Kaggle competition: [Transfer Learning on Stack Ex
 
 ## License
 
-TODO: Write license
+Apache License 2.0
