@@ -8,7 +8,11 @@ Predicting topics of Stack Exchange questions based on the context.
 
 This project compares different features (tf-idf, doc2vec) and different classification models (Naive Bayes, SVM) in the task of predicting related topic for questions being asked in the Stack Exchange communities.
 
-I implemented my own version of doc2vec model in [TensorFlow r0.12](https://www.tensorflow.org/) mimicing the word2vec example in TensorFlow's [tutorial](https://github.com/tensorflow/models/blob/master/tutorials/embedding/word2vec.py). 
+I implemented my own version of doc2vec model in [TensorFlow r0.12](https://www.tensorflow.org/) mimicing the word2vec example in TensorFlow's [tutorial](https://github.com/tensorflow/models/blob/master/tutorials/embedding/word2vec.py). A GPU version is also implemented for faster training.
+
+## Usage
+
+To use the doc2vec model, you may need to create your own version of batch generation function since the current one is only used for the purpose of the project. 
 
 ## Contributing
 
@@ -20,11 +24,7 @@ I implemented my own version of doc2vec model in [TensorFlow r0.12](https://www.
 
 ## History
 
-TODO: Write history
-
-## Credits
-
-TODO: Write credits
+The project originates from a Kaggle competition: [Transfer Learning on Stack Exchange Tags](https://www.kaggle.com/c/transfer-learning-on-stack-exchange-tags)
 
 ## License
 
