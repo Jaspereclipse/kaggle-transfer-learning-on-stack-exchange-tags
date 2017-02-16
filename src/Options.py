@@ -16,14 +16,14 @@ flags.DEFINE_string("vocabulary_counts", config_data['vocabulary_counts'], "Voca
 # model params
 flags.DEFINE_integer("vocab_size", None, "vocabulary size") # include NULL, UNK
 flags.DEFINE_integer("num_paragraphs", None, "number of paragraphs in the training set")
-flags.DEFINE_integer("doc_embedding_size", 100, "embedding size for paragraph")
-flags.DEFINE_integer("word_embedding_size", 50, "embedding size for word")
-flags.DEFINE_integer("batch_size", 128, "number of training samples per batch")
+flags.DEFINE_integer("doc_embedding_size", 1000, "embedding size for paragraph")
+flags.DEFINE_integer("word_embedding_size", 200, "embedding size for word")
+flags.DEFINE_integer("batch_size", 32, "number of training samples per batch")
 flags.DEFINE_integer("num_neg_samples", 100, "number of negative samples per training sample")
-flags.DEFINE_integer("epochs", 15, "number of epochs to train")
+flags.DEFINE_integer("epochs", 10, "number of epochs to train")
 flags.DEFINE_float("learning_rate", 0.1, "learning rate")
 flags.DEFINE_string("mode", "concat", "ways to combine paragraph with word embeddings, e.g. [concat|sum|average]")
-flags.DEFINE_integer("window", 4, "number of preceding words used to predict next word")
+flags.DEFINE_integer("window", 5, "number of preceding words used to predict next word")
 # train param
 flags.DEFINE_integer("threads", 8, "number of threads used in training")
 flags.DEFINE_integer("stats_interval", 10, "Print statistics every N seconds")
