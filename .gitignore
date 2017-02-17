@@ -104,3 +104,6 @@ save/
 *.synctex.gz
 *.tex
 *.tex.bak
+
+# xlsx
+img/Workbook1.xlsx
